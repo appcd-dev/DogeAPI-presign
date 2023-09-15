@@ -1,0 +1,43 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Presign API
+  description: An API to get pre-signed URLs for S3 objects.
+
+paths:
+  /presign/{s3_key}:
+    get:
+      summary: Generate a pre-signed URL for an S3 object.
+      description: Returns a pre-signed URL for the specified S3 key.
+      parameters:
+        - in: path
+          name: s3_key
+          required: true
+          description: S3 key for which to generate a pre-signed URL.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A pre-signed URL was successfully generated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presigned_url:
+                    type: string
+                    description: The pre-signed URL for the specified S3 key.
+        '404':
+          description: Failed to generate the pre-signed URL.
+        '500':
+          description: Internal server error.
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string

@@ -1,8 +1,24 @@
-from flask import Flask, jsonify, abort
-import boto3
 import os
 
+from flask import Flask, jsonify, abort, send_from_directory
+from flask_swagger_ui import get_swaggerui_blueprint
+import boto3
+
+
 app = Flask(__name__)
+
+# Setup OpenAPI
+SWAGGER_URL = '/docs'
+API_URL = '/docs/openapi.yaml'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "Presign API"
+    }
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
 
 # Setup boto3 client
 s3_client = boto3.client("s3")
@@ -26,6 +42,11 @@ def get_presigned_url(s3_key):
         abort(404, description="Failed to generate the presigned URL")
 
     return jsonify({"presigned_url": presigned_url})
+
+
+@app.route('/docs/openapi.yaml')
+def serve_openapi():
+    return send_from_directory('docs', 'openapi.yaml')
 
 
 if __name__ == "__main__":
