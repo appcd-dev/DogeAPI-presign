@@ -1,0 +1,13 @@
+version: '3.7'
+
+services:
+  presign-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - S3_BUCKET_NAME=appcd-demo-dogeapi
+    volumes:
+      - ./docs:/app/docs
