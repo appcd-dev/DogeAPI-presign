@@ -1,6 +1,6 @@
 version: 0.0.1
 services:
   dogeapi:
-    dtr: ghcr.io/appcd-dev/dogeapi/dogeapi
+    dtr: ghcr.io/appcd-dev/dogeapi-presign/presign:latest
     tag: latest
     dockerFile: Dockerfile
