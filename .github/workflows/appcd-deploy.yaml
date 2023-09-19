@@ -52,7 +52,7 @@ jobs:
 
       - name: Helm Upgrade
         run: |
-          helm upgrade demo-chart ./.appcd/charts/dogeapi-presign -f .appcd/overrides/dogeapi/values.yaml --install --wait
+          helm upgrade demo-chart ./.appcd/charts/dogeapi-presign --install --wait
 
       - name: Get Ingress
         run: |
