@@ -1,5 +1,5 @@
 version: 0.0.1
 name: dogeapi-presign
-image_registry: ghcr.io/appcd-dev/dogeapi-presign/presign
-image_tag: latest
+imageRegistry: ghcr.io/appcd-dev/dogeapi-presign/presign
+imageTag: latest
 dockerFile: Dockerfile
