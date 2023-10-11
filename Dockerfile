@@ -1,20 +1,26 @@
-# Use an official Python runtime as the parent image
+# Use the official Python image from the DockerHub
 FROM python:3.11-slim
 
-# Set the working directory in the container
-WORKDIR /app
+# Set the working directory in docker
+WORKDIR /usr/src/app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy the dependencies file to the working directory
+COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
+# Install any dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
+# Copy the source code to the working directory
+COPY . .
 
-ENV FLASK_APP=main.py
-ENV FLASK_RUN_HOST=0.0.0.0
+# Switch to non-root user
+USER 1000
 
-# Run the command to start the app
-CMD ["flask", "run"]
+# Define environment variables for logging
+ENV ACCESS_LOG=${ACCESS_LOG:-/proc/1/fd/1}
+ENV ERROR_LOG=${ERROR_LOG:-/proc/1/fd/2}
+
+EXPOSE 8000
+
+# Command to run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
