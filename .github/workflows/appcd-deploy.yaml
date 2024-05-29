@@ -15,20 +15,29 @@ jobs:
     timeout-minutes: 10
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Create required directories
         run: mkdir -p .appcd/charts && chmod 777 .appcd -R
 
       - name: Login to docker
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: run appCD
-        run: |
-          docker run --rm \
-          --workdir=/code  \
-          -v $PWD:/code ghcr.io/appcd-dev/appcd-dist/appcd@sha256:a38ade31e60f3f7f76b1135a388db158eed3c90816d5b5c09e33dd806efb67d5 \
-          generate --mode ci --output=/code/.appcd/charts
+      - name: Generate IAC for PR branch
+        env:
+          APPCD_TOKEN: ${{ secrets.APPCD_TOKEN }}
+          APPCD_URL: ${{ secrets.APPCD_URL }}
+        uses: appcd-dev/action@v0.0.1
+        with:
+            cloud: 'aws'
+            language: 'Python'
+            outputDir: './.appcd/charts'
+            scanPath: '.'
+            targetCompute: 'k8s'
+      - name: Upload PR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr_branch_artifacts
+          path: ./.appcd/charts
       - name: Install AWS CLI
         id: install-aws-cli
         uses: unfor19/install-aws-cli-action@master
@@ -45,10 +54,6 @@ jobs:
       - name: Install Helm Diff
         run: |
           helm plugin install https://github.com/databus23/helm-diff
-
-#      - name: Helm diff
-#        run: |
-#          helm diff upgrade demo-chart ./.appcd/charts/dogeapi -f .appcd/overrides/dogeapi/values.yaml --install
 
       - name: Helm Upgrade
         run: |

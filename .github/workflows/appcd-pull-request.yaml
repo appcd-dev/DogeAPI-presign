@@ -1,10 +1,13 @@
-name: appCD Pull Request Workflow
+name: APPCD Diff check
 on:
   pull_request:
     branches:
       - main
 jobs:
   compare-artifacts:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Main Branch
@@ -12,50 +15,64 @@ jobs:
         with:
           ref: main
           path: main_branch
-      - name: Login to docker
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Generate IaC from Main Branch
-        run: |
-          mkdir -p artifact/main/
-          docker pull ghcr.io/appcd-dev/appcd-dist/appcd@sha256:a38ade31e60f3f7f76b1135a388db158eed3c90816d5b5c09e33dd806efb67d5
-          docker run --rm \
-          --workdir=/code  \
-          -v ./main_branch:/code -v ./artifact/main:/artifact/main ghcr.io/appcd-dev/appcd-dist/appcd@sha256:a38ade31e60f3f7f76b1135a388db158eed3c90816d5b5c09e33dd806efb67d5 \
-          generate --mode ci --output=/artifact/main/.appcd/charts
+          fetch-depth: 1
+      - name: Generate IAC for main branch
+        env:
+          APPCD_TOKEN: ${{ secrets.APPCD_TOKEN }}
+          APPCD_URL: ${{ secrets.APPCD_URL }}
+        uses: appcd-dev/action@v0.0.1
+        with:
+            cloud: 'aws'
+            language: 'Python'
+            outputDir: './artifact/main'
+            scanPath: './main_branch'
+            targetCompute: 'k8s'
+      - name: Upload main artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: main_branch_artifacts
+          path: artifact/main
       - name: Checkout PR Branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           path: pr_branch
+          fetch-depth: 1
       - name: Extract branch name
         id: extract_branch
         run: echo "branch=$(basename ${{ github.head_ref}})" >> $GITHUB_OUTPUT
       - name: echo branch name
         run: echo ${{ steps.extract_branch.outputs.branch }}
-      - name: Generate IaC from PR branch
-        run: |
-          mkdir -p artifact/${{ steps.extract_branch.outputs.branch }}/
-          docker run --rm \
-          --workdir=/code  \
-          -v ./pr_branch/:/code -v ./artifact/${{ steps.extract_branch.outputs.branch }}:/artifact/${{ steps.extract_branch.outputs.branch }} ghcr.io/appcd-dev/appcd-dist/appcd@sha256:a38ade31e60f3f7f76b1135a388db158eed3c90816d5b5c09e33dd806efb67d5 \
-          generate --mode ci --output=/artifact/${{ steps.extract_branch.outputs.branch }}/.appcd/charts
+      - name: Generate IAC for PR branch
+        env:
+          APPCD_TOKEN: ${{ secrets.APPCD_TOKEN }}
+          APPCD_URL: ${{ secrets.APPCD_URL }}
+        uses: appcd-dev/action@v0.0.1
+        with:
+            cloud: 'aws'
+            language: 'Python'
+            outputDir: './artifact/pr_artifacts'
+            scanPath: './pr_branch'
+            targetCompute: 'k8s'
+      - name: Upload PR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr_branch_artifacts
+          path: ./artifact/pr_artifacts
       - name: Generate diff between Main and PR branch
         run: |
           mkdir -p pr_branch/deployment_files
-          mv ./artifact/main/.appcd pr_branch/deployment_files/
-          cd pr_branch
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add deployment_files
+          cd ./artifact/main/
+          git init
+          git config --local user.email "bot@appcd.com"
+          git config --local user.name "AppCD Bot"
+          git add .
           git commit -m "staging deployment files from main to compare them"
-          rm -rf deploment_files/*
-          rm -rf deployment_files/.appcd
-          cd ..
-          mv artifact/${{ steps.extract_branch.outputs.branch }}/.appcd pr_branch/deployment_files/
-          cd pr_branch
-          git diff --output=../diff.txt deployment_files/ | cat
-          cat ../diff.txt
+          rm -rf *
+          cp -R ../pr_artifacts/* .
+          git add .
+          git diff --staged --output=../../diff.txt . | cat
+          cat ../../diff.txt
       - name: Comment PR with IaC Changes
         uses: actions/github-script@v6
         with:
@@ -63,7 +80,20 @@ jobs:
           script: |
             const fs = require('fs');
             const diff = fs.readFileSync('diff.txt', 'utf-8');
-            const body = `### AppCD AppStack: http://demo.dev.appcd.io/appstacks/DogeAPI/\n ### IaC Diff:\n\`\`\`${diff}\`\`\``;
+            const body = `### AppCD Diff:\n\`\`\`${diff}\`\`\``;
+            await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+            })
+      - name: Trigger atlantis plan
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const fs = require('fs');
+            const body = `atlantis plan`;
             await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
