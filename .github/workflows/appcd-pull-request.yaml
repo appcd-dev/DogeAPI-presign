@@ -20,7 +20,7 @@ jobs:
         env:
           APPCD_TOKEN: ${{ secrets.APPCD_TOKEN }}
           APPCD_URL: ${{ secrets.APPCD_URL }}
-        uses: appcd-dev/action@v0.0.1
+        uses: appcd-dev/action@v0
         with:
             cloud: 'aws'
             language: 'Python'
@@ -47,7 +47,7 @@ jobs:
         env:
           APPCD_TOKEN: ${{ secrets.APPCD_TOKEN }}
           APPCD_URL: ${{ secrets.APPCD_URL }}
-        uses: appcd-dev/action@v0.0.1
+        uses: appcd-dev/action@v0
         with:
             cloud: 'aws'
             language: 'Python'
