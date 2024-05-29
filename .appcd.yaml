@@ -1,6 +1,8 @@
 version: 0.0.1
+appstack_name: dogeapi-presign
 services:
-  dogeapi:
+  dogeapi-presign:
+    language: Python
     dtr: ghcr.io/appcd-dev/dogeapi-presign/presign:latest
     tag: latest
     dockerFile: Dockerfile
