@@ -16,6 +16,13 @@ jobs:
           ref: main
           path: main_branch
           fetch-depth: 1
+      - run: |
+          echo "ACTIONS_STEP_DEBUG: [${{ env.ACTIONS_STEP_DEBUG }}]"
+          echo "ACTIONS_RUNNER_DEBUG: [${{ env.ACTIONS_RUNNER_DEBUG }}]"
+          echo "STEP_DEBUG: [${{ env.STEP_DEBUG }}]"
+          echo "RUNNER_DEBUG: [${{ env.RUNNER_DEBUG }}]"
+          
+          echo "RUNNER_DEBUG: [${{ runner.debug }}]"
       - name: Generate IAC for main branch
         env:
           APPCD_TOKEN: ${{ secrets.APPCD_TOKEN }}
@@ -27,7 +34,8 @@ jobs:
             outputDir: './artifact/main'
             scanPath: './main_branch'
             targetCompute: 'k8s'
-            enableDebug: 'true'
+            # if runner.debug is set to 1, enable debug logs
+            enableDebug: ${{ runner.debug == '1' && 'true' || 'false' }}
       - name: Upload main artifacts
         uses: actions/upload-artifact@v4
         with:
