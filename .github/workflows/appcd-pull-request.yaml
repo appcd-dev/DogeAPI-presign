@@ -27,6 +27,7 @@ jobs:
             outputDir: './artifact/main'
             scanPath: './main_branch'
             targetCompute: 'k8s'
+            enableDebug: 'true'
       - name: Upload main artifacts
         uses: actions/upload-artifact@v4
         with:
