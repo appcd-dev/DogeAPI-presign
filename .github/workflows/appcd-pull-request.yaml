@@ -34,7 +34,6 @@ jobs:
             outputDir: './artifact/main'
             scanPath: './main_branch'
             targetCompute: 'k8s'
-            # if runner.debug is set to 1, enable debug logs
             enableDebug: ${{ runner.debug == '1' && 'true' || 'false' }}
       - name: Upload main artifacts
         uses: actions/upload-artifact@v4
@@ -68,13 +67,18 @@ jobs:
         with:
           name: pr_branch_artifacts
           path: ./artifact/pr_artifacts
+      - name: All Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: all_artifacts
+          path: ./artifact
       - name: Generate diff between Main and PR branch
         run: |
-          mkdir -p pr_branch/deployment_files
+          tree
           cd ./artifact/main/
           git init
           git config --local user.email "bot@appcd.com"
-          git config --local user.name "AppCD Bot"
+          git config --local user.name "appCD Bot"
           git add .
           git commit -m "staging deployment files from main to compare them"
           rm -rf *
@@ -89,7 +93,7 @@ jobs:
           script: |
             const fs = require('fs');
             const diff = fs.readFileSync('diff.txt', 'utf-8');
-            const body = `### AppCD Diff:\n\`\`\`${diff}\`\`\``;
+            const body = `### appCD Diff:\n\`\`\`${diff}\`\`\``;
             await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
