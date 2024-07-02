@@ -1,4 +1,4 @@
-boto3==1.34.105
+boto3==1.34.137
 Flask==3.0.3
 python-dotenv==1.0.1
 flask-swagger-ui==4.11.1
